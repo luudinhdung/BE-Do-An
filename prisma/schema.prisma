@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  name             String
+  email            String?           @unique
+  phone            String?           @unique
+  password         String
+  otpCode          String?
+  otpExpires       DateTime?
+  deletedAt        DateTime?
+  isDeleted        Boolean           @default(false)
+  avatar           String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  role             UserRole          @default(USER)
+  chatParticipants ChatParticipant[]
+  sentMessages     Message[]         @relation("UserSentMessages")
+  messageReads     MessageRead[]
+  feedbacks        Feedback[]
+  defaultCountdown Int               @default(180)
+
+  balance      Int           @default(0) // số dư hiện tại
+  transactions Transaction[]
+}
+
+model Chat {
+  id            String            @id @default(uuid())
+  createdAt     DateTime          @default(now())
+  deletedAt     DateTime?
+  expiresAt     DateTime?
+  isGroup       Boolean           @default(false)
+  name          String?
+  durationTime  DateTime?
+  hashedUserKey String?
+  serverKey     String?
+  isEncrypted   Boolean           @default(false)
+  participants  ChatParticipant[]
+  messages      Message[]
+}
+
+model ChatParticipant {
+  id       String   @id @default(uuid())
+  chatId   String
+  userId   String
+  role     ChatRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+  chat     Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id               String        @id @default(uuid())
+  type             MessageType   @default(TEXT)
+  content          String?
+  attachments      Json?
+  chatId           String
+  createdAt        DateTime      @default(now())
+  deletedAt        DateTime?
+  repliedMessageId String?
+  senderId         String
+  status           MessageStatus @default(SENT)
+  updatedAt        DateTime?
+  data             String?
+  iv               String?
+  isEncrypted      Boolean       @default(false)
+  chat             Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  repliedMessage   Message?      @relation("MessageToReply", fields: [repliedMessageId], references: [id])
+  replies          Message[]     @relation("MessageToReply")
+  sender           User          @relation("UserSentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  messageReads     MessageRead[]
+  reactions        Json? // [{ "userId": "u1", "emoji": "❤️" }]
+  previewUrl       String?
+
+  transactions Transaction[]
+
+  @@index([chatId])
+  @@index([senderId])
+  @@index([chatId], map: "idx_message_chatId")
+  @@index([senderId], map: "idx_message_senderId")
+}
+
+model MessageRead {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
+
+model Feedback {
+  id          String   @id @default(uuid())
+  userId      String? // nếu người dùng đã đăng nhập, optional
+  name        String? // tên người gửi, có thể tự nhập
+  email       String? // email người gửi
+  phone       String? // số điện thoại người gửi
+  content     String // nội dung ý kiến
+  screenshots String[] // URL hoặc base64 ảnh lỗi
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  userId      String
+  messageId   String?
+  amount      Int
+  description String?
+  createdAt   DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([messageId])
+}
+
+model PricingRule {
+  id        String      @id @default(uuid())
+  type      MessageType @unique
+  cost      Int // số tiền trừ cho mỗi loại
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
+}
+
+enum ChatRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}

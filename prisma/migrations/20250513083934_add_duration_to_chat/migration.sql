@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Chat" ADD COLUMN "durationTime" TIMESTAMP NOT NULL DEFAULT NOW();
