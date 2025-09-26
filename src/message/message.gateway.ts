@@ -44,8 +44,6 @@ export class MessageGateway implements OnGatewayConnection {
     this.server.to(payload.chatId).emit('receive_message', {
       ...message,
       messageId: message.id,
-      previewUrl: payload.previewUrl ?? null, // ✅ gửi previewUrl
-      fileName: payload.fileName ?? null,     // ✅ gửi fileName
     });
     
 
