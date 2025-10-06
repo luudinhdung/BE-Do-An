@@ -104,6 +104,7 @@ export class UsersService {
         phone: data.phone ?? null,
         password: hashedPassword,
         avatar,
+        balance: 0, 
       },
       select: {
         id: true,
@@ -112,6 +113,7 @@ export class UsersService {
         phone: true,
         avatar: true,
         createdAt: true,
+        balance: true,
       },
     });
 
@@ -266,6 +268,7 @@ export class UsersService {
           avatar: user.avatar,
           role: user.role,
           defaultCountdown: user.defaultCountdown,
+          balance: user.balance,
         },
         message: 'Current user retrieved successfully',
       });
@@ -296,6 +299,7 @@ export class UsersService {
           avatar: true,
           role: true,
           createdAt: true,
+          balance: true,
         },
       });
 
@@ -481,6 +485,7 @@ export class UsersService {
           phone: true,
           avatar: true,
           role: true, // có thể bỏ nếu không muốn trả ra role
+          balance: true,
         },
       });
     } catch (error) {

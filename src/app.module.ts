@@ -9,6 +9,8 @@ import { MailModule } from './mail/mail.module';
 import { MessageModule } from './message/message.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
+import { TransactionModule } from './transaction/transaction.module';
+import { PricingRuleModule } from './pricing-rule/pricing-rule.module';
 
 @Module({
   imports: [
@@ -23,6 +25,9 @@ import { UsersModule } from './users/users.module';
     MessageModule,
     ChatModule,
     FeedbackModule,
+    TransactionModule,
+    PricingRuleModule,
+
     // các module khác...
   ],
   controllers: [AppController],

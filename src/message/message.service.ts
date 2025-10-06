@@ -112,6 +112,7 @@ export class MessageService {
       repliedMessageId: dto.repliedMessageId,
       type: dto.type,
       attachments: dto.attachments,
+      previewUrl: dto.previewUrl || null,
       status: dto.status,
       isEncrypted: dto.isEncrypted || false,
     };
@@ -160,6 +161,8 @@ export class MessageService {
         type: true,
         repliedMessageId: true,
         reactions: true,
+        attachments: true,
+        previewUrl: true,
         sender: {
           select: {
             id: true,

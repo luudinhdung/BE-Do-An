@@ -11,7 +11,6 @@ model User {
   id               String            @id @default(uuid())
   name             String
   email            String?           @unique
-  phone            String?           @unique
   password         String
   otpCode          String?
   otpExpires       DateTime?
@@ -21,14 +20,14 @@ model User {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @default(now()) @updatedAt
   role             UserRole          @default(USER)
+  defaultCountdown Int               @default(180)
+  phone            String?           @unique
+ balance   Float    @default(0)
   chatParticipants ChatParticipant[]
+  feedbacks        Feedback[]
   sentMessages     Message[]         @relation("UserSentMessages")
   messageReads     MessageRead[]
-  feedbacks        Feedback[]
-  defaultCountdown Int               @default(180)
-
-  balance      Int           @default(0) // số dư hiện tại
-  transactions Transaction[]
+  transactions     Transaction[]
 }
 
 model Chat {
@@ -73,20 +72,17 @@ model Message {
   data             String?
   iv               String?
   isEncrypted      Boolean       @default(false)
+  reactions        Json?
+  previewUrl       String?
   chat             Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
   repliedMessage   Message?      @relation("MessageToReply", fields: [repliedMessageId], references: [id])
   replies          Message[]     @relation("MessageToReply")
   sender           User          @relation("UserSentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   messageReads     MessageRead[]
-  reactions        Json? // [{ "userId": "u1", "emoji": "❤️" }]
-  previewUrl       String?
-
-  transactions Transaction[]
+  transactions     Transaction[]
 
   @@index([chatId])
   @@index([senderId])
-  @@index([chatId], map: "idx_message_chatId")
-  @@index([senderId], map: "idx_message_senderId")
 }
 
 model MessageRead {
@@ -102,29 +98,28 @@ model MessageRead {
 
 model Feedback {
   id          String   @id @default(uuid())
-  userId      String? // nếu người dùng đã đăng nhập, optional
-  name        String? // tên người gửi, có thể tự nhập
-  email       String? // email người gửi
-  phone       String? // số điện thoại người gửi
-  content     String // nội dung ý kiến
-  screenshots String[] // URL hoặc base64 ảnh lỗi
-  read        Boolean  @default(false)
+  userId      String?
+  name        String?
+  email       String?
+  phone       String?
+  content     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
-
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screenshots String[]
+  read        Boolean  @default(false)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
   userId      String
   messageId   String?
   amount      Int
   description String?
-  createdAt   DateTime @default(now())
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  message Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+  type        TransactionType
+  message     Message?        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([messageId])
@@ -133,7 +128,7 @@ model Transaction {
 model PricingRule {
   id        String      @id @default(uuid())
   type      MessageType @unique
-  cost      Int // số tiền trừ cho mỗi loại
+  cost      Int
   isActive  Boolean     @default(true)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @default(now()) @updatedAt
@@ -162,3 +157,10 @@ enum UserRole {
   USER
   ADMIN
 }
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  MESSAGE
+  SEND_MESSAGE
+} 
