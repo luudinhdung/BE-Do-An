@@ -1,7 +1,8 @@
 pipeline {
   agent {
     docker {
-      image 'node:20'
+      // Docker CLI image có sẵn docker command (chuẩn nhất cho build & push)
+      image 'docker:27.0.3-cli'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
