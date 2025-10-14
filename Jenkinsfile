@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'node:18' // chạy toàn bộ pipeline bên trong container này
-      args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock' // để có quyền cài package nếu cần
-    }
-  }
+  agent any
 
   environment {
     IMAGE = "dungsave123/chat-backend"
