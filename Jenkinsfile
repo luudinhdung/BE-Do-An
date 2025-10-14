@@ -30,14 +30,12 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-        dir('Be_ChatAs') {
-          sh '''
-            ls -la
-            ls -la prisma || true
-            npm ci
-            npx prisma generate --schema=./prisma/schema.prisma
-          '''
-        }
+        sh '''
+          ls -la
+          ls -la prisma || true
+          npm ci
+          npx prisma generate --schema=./prisma/schema.prisma
+        '''
       }
     }
 
