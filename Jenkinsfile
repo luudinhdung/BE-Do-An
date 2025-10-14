@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image 'docker:24.0.5-dind-alpine'  // Có sẵn docker CLI
+      image 'docker:24.0.5'  // Có sẵn docker CLI
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
   }
   }
