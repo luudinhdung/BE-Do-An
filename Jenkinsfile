@@ -1,18 +1,20 @@
 pipeline {
   agent {
     docker {
-      image 'node:18'
+      image 'node:20'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
     }
-  }
+  } 
 
   environment {
     IMAGE = "dungsave123/chat-backend"
-    DOCKER_CRED = 'dockerhub-cred'   // replace
+    DOCKER_CRED = 'dockerhub-credentials'   // replace
     SSH_CRED = 'gcp-ssh-key'            // replace
     REMOTE_USER = 'dungsave123'         // replace
     REMOTE_HOST = '35.188.81.254'      // replace
     REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as' // replace if different
+    UPSTASH_REDIS_REST_URL = 'https://emerging-chipmunk-11349.upstash.io'
+    UPSTASH_REDIS_REST_TOKEN = 'ASxVAAIjcDE5ZjM2Y2JkYzZhYTA0YWU2OGRlMTk1YWQ1NDI1OWVmYnAxMA'
   }
 
   stages {
@@ -30,6 +32,7 @@ pipeline {
       steps {
         dir('Be_ChatAs') {
           sh 'npm ci'
+          sh 'npx prisma generate'
           sh 'npm test'   // nếu muốn failing pipeline khi test fail
         }
       }
