@@ -1,9 +1,9 @@
 pipeline {
   agent {
     docker {
-      image 'node:20'  // Có sẵn docker CLI
+      image 'node:20'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-  }
+    }
   }
 
   environment {
@@ -14,10 +14,11 @@ pipeline {
     REMOTE_HOST = '35.188.81.254'
     REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as'
     UPSTASH_REDIS_REST_URL = 'https://emerging-chipmunk-11349.upstash.io'
-    UPSTASH_REDIS_REST_TOKEN = 'ASxVAAIjcDE5ZjM2Y2JkYzZhYTA0YWU2OGRlMTk1YWQ1NDI1OWVmYnAxMA'
+    UPSTASH_REDIS_REST_TOKEN = 'ASxVAAIjcDE5ZjM2Y2JkYTA0YWU2OGRlMTk1YWQ1NDI1OWVmYnAxMA'
   }
 
   stages {
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -30,16 +31,15 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-        sh '''
-          apk add --no-cache nodejs npm
-          node -v
-          npm -v
-          ls -la
-          npm ci
-          npx prisma generate --schema=./prisma/schema.prisma
-        '''
-        }
-}
+          sh '''
+            node -v
+            npm -v
+            ls -la
+            npm ci
+            npx prisma generate --schema=./prisma/schema.prisma
+          '''
+      }
+    }
 
     stage('Build Docker Image') {
       steps {
