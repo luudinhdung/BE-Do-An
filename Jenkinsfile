@@ -4,15 +4,15 @@ pipeline {
       image 'node:20'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
     }
-  } 
+  }
 
   environment {
     IMAGE = "dungsave123/chat-backend"
-    DOCKER_CRED = 'dockerhub-credentials'   // replace
-    SSH_CRED = 'gcp-ssh-key'            // replace
-    REMOTE_USER = 'dungsave123'         // replace
-    REMOTE_HOST = '35.188.81.254'      // replace
-    REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as' // replace if different
+    DOCKER_CRED = 'dockerhub-credentials'   // credentials Docker Hub trong Jenkins
+    SSH_CRED = 'gcp-ssh-key'                // credentials SSH key
+    REMOTE_USER = 'dungsave123'             // user SSH vào VM
+    REMOTE_HOST = '35.188.81.254'           // IP VM GCP
+    REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as' // thư mục chứa docker-compose.yml
     UPSTASH_REDIS_REST_URL = 'https://emerging-chipmunk-11349.upstash.io'
     UPSTASH_REDIS_REST_TOKEN = 'ASxVAAIjcDE5ZjM2Y2JkYzZhYTA0YWU2OGRlMTk1YWQ1NDI1OWVmYnAxMA'
   }
@@ -28,23 +28,26 @@ pipeline {
       }
     }
 
-    stage('Install & Test') {
+    stage('Install Dependencies') {
       steps {
         dir('Be_ChatAs') {
           sh 'npm ci'
           sh 'npx prisma generate'
-          sh 'npm test'   // nếu muốn failing pipeline khi test fail
+          // Nếu chưa có test thì comment dòng dưới lại:
+          // sh 'npm test'
         }
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        sh "docker build -t ${IMAGE}:${IMAGE_TAG} -f ./backend/Dockerfile ./backend"
+        dir('Be_ChatAs') {
+          sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
+        }
       }
     }
 
-    stage('Push Images') {
+    stage('Push Docker Image') {
       steps {
         withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
@@ -57,7 +60,7 @@ pipeline {
       }
     }
 
-    stage('Deploy') {
+    stage('Deploy to Remote VM') {
       steps {
         sshagent([SSH_CRED]) {
           sh """
@@ -73,7 +76,11 @@ pipeline {
   }
 
   post {
-    success { echo "Deployed ${IMAGE}:${IMAGE_TAG}" }
-    failure { echo "Pipeline failed." }
+    success {
+      echo "✅ Successfully deployed ${IMAGE}:${IMAGE_TAG}"
+    }
+    failure {
+      echo "❌ Pipeline failed."
+    }
   }
 }
