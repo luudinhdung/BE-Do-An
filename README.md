@@ -4,4 +4,4 @@ code-server
 
 GET /transactions/:userId
 Mục đích: Xem lịch sử giao dịch của một use
-POST /transactions/:userId/depositádadádasdasd1312
+POST /transactions/:userId/depositádadádasdasd13121323
