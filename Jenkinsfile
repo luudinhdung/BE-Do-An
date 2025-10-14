@@ -32,7 +32,7 @@ pipeline {
       steps {
         dir('Be_ChatAs') {
           sh 'npm ci'
-          sh 'npx prisma generate'
+          sh 'npx prisma generate --schema=./prisma/schema.prisma'
           // Nếu chưa có test thì comment dòng dưới lại:
           // sh 'npm test'
         }
