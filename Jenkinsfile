@@ -8,11 +8,11 @@ pipeline {
 
   environment {
     IMAGE = "dungsave123/chat-backend"
-    DOCKER_CRED = 'dockerhub-credentials'   // credentials Docker Hub trong Jenkins
-    SSH_CRED = 'gcp-ssh-key'                // credentials SSH key
-    REMOTE_USER = 'dungsave123'             // user SSH vào VM
-    REMOTE_HOST = '35.188.81.254'           // IP VM GCP
-    REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as' // thư mục chứa docker-compose.yml
+    DOCKER_CRED = 'dockerhub-credentials'
+    SSH_CRED = 'gcp-ssh-key'
+    REMOTE_USER = 'dungsave123'
+    REMOTE_HOST = '35.188.81.254'
+    REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as'
     UPSTASH_REDIS_REST_URL = 'https://emerging-chipmunk-11349.upstash.io'
     UPSTASH_REDIS_REST_TOKEN = 'ASxVAAIjcDE5ZjM2Y2JkYzZhYTA0YWU2OGRlMTk1YWQ1NDI1OWVmYnAxMA'
   }
@@ -31,14 +31,13 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         dir('Be_ChatAs') {
-           sh '''
+          sh '''
             ls -la
             ls -la prisma || true
             npm ci
             npx prisma generate --schema=./prisma/schema.prisma
           '''
         }
-    }
       }
     }
 
