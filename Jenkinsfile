@@ -31,6 +31,8 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         dir('Be_ChatAs') {
+          ls -la
+          ls -la prisma || true
           sh 'npm ci'
           sh 'npx prisma generate --schema=./prisma/schema.prisma'
           // Nếu chưa có test thì comment dòng dưới lại:
