@@ -1,8 +1,7 @@
 pipeline {
   agent {
     docker {
-      // Docker CLI image có sẵn docker command (chuẩn nhất cho build & push)
-      image 'docker:27.0.3-cli'
+      image 'node:20'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
@@ -14,12 +13,9 @@ pipeline {
     REMOTE_USER = 'dungsave123'
     REMOTE_HOST = '35.188.81.254'
     REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as'
-    UPSTASH_REDIS_REST_URL = 'https://emerging-chipmunk-11349.upstash.io'
-    UPSTASH_REDIS_REST_TOKEN = 'ASxVAAIjcDE5ZjM2Y2JkYTA0YWU2OGRlMTk1YWQ1NDI1OWVmYnAxMA'
   }
 
   stages {
-
     stage('Checkout') {
       steps {
         checkout scm
@@ -32,21 +28,22 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-          sh '''
-            node -v
-            npm -v
-            ls -la
-            npm ci
-            npx prisma generate --schema=./prisma/schema.prisma
-          '''
+        sh '''
+          echo "📦 Installing dependencies..."
+          node -v
+          npm -v
+          npm ci
+          npx prisma generate --schema=./prisma/schema.prisma
+        '''
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        dir('Be_ChatAs') {
-          sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
-        }
+        sh '''
+          echo "🐳 Building Docker image..."
+          docker build -t ${IMAGE}:${IMAGE_TAG} .
+        '''
       }
     }
 
@@ -54,6 +51,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
+            echo "📤 Pushing image to Docker Hub..."
             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
             docker push ${IMAGE}:${IMAGE_TAG}
             docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
@@ -67,6 +65,7 @@ pipeline {
       steps {
         sshagent([SSH_CRED]) {
           sh """
+            echo "🚀 Deploying to remote server..."
             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
               cd ${REMOTE_PROJECT_DIR} &&
               docker compose pull chat-backend || true &&
