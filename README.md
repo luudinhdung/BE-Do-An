@@ -4,5 +4,4 @@ code-server
 
 GET /transactions/:userId
 Mục đích: Xem lịch sử giao dịch của một use
-POST /transactions/:userId/depositádad
-Mục đích: Nạp tiền vào tài khoản user.
+POST /transactions/:userId/depositádadádasdasd
