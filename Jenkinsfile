@@ -1,7 +1,8 @@
 pipeline {
   agent {
     docker {
-      image 'node:20'
+      // Image có sẵn Docker CLI, ta mount Docker socket để Jenkins dùng Docker ngoài host
+      image 'docker:27.0.3-cli'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
@@ -29,7 +30,8 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         sh '''
-          echo "📦 Installing dependencies..."
+          echo "📦 Installing Node.js 20 & dependencies..."
+          apk add --no-cache nodejs npm
           node -v
           npm -v
           npm ci
