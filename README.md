@@ -3,7 +3,7 @@ code-server
 
 
 GET /transactions/:userId
-Mục đích: Xem lịch sử giao dịch của một user.asasas
+Mục đích: Xem lịch sử giao dịch của một user.asasas1231
 
 POST /transactions/:userId/deposit
 Mục đích: Nạp tiền vào tài khoản user.
