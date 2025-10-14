@@ -1,9 +1,9 @@
 pipeline {
   agent {
     docker {
-      image 'node:20'
+      image 'docker:24.0.5-dind-alpine'  // Có sẵn docker CLI
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-    }
+  }
   }
 
   environment {
@@ -31,13 +31,15 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         sh '''
+          apk add --no-cache nodejs npm
+          node -v
+          npm -v
           ls -la
-          ls -la prisma || true
           npm ci
           npx prisma generate --schema=./prisma/schema.prisma
         '''
-      }
-    }
+        }
+}
 
     stage('Build Docker Image') {
       steps {
