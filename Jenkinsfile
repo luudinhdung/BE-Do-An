@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
       image 'node:18' // chạy toàn bộ pipeline bên trong container này
-      args '-u root:root' // để có quyền cài package nếu cần
+      args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock' // để có quyền cài package nếu cần
     }
   }
 
@@ -28,7 +28,7 @@ pipeline {
 
     stage('Install & Test') {
       steps {
-        dir('backend') {
+        dir('Be_ChatAs') {
           sh 'npm ci'
           sh 'npm test'   // nếu muốn failing pipeline khi test fail
         }
