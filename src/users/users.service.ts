@@ -496,8 +496,18 @@ export class UsersService {
 
   async logout(req: Request, res: Response) {
     // Xoá cookie access_token và refresh_token
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    res.clearCookie('access_token', {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  path: '/',
+});
+res.clearCookie('refresh_token', {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  path: '/',
+});
 
     return res.status(200).json({ message: 'Đăng xuất thành công' });
   }

@@ -100,7 +100,7 @@ export class UsersController {
     }),
   )
   uploadAvatar(@UploadedFile() file: Express.Multer.File) {
-    const imageUrl = `http://localhost:3002/uploads/${file.filename}`;
+    const imageUrl = `https://35.188.81.254/uploads/${file.filename}`;
     return { url: imageUrl };
   }
 

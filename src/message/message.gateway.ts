@@ -1,6 +1,7 @@
 // message.gateway.ts - Sửa toàn bộ file
 import { forwardRef, Inject } from '@nestjs/common';
 import {
+  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   SubscribeMessage,
@@ -103,36 +104,34 @@ export class MessageGateway implements OnGatewayConnection {
     this.server.to(chatId).emit('chat:all-read', { chatId, userId });
   }
 
-  @SubscribeMessage('joinRoom')
-  handleJoinRoomByChatId(client: Socket, chatId: string) {
-    if (chatId) {
-      client.join(chatId);
-      console.log(`Client ${client.id} joined chat room ${chatId}`);
-    }
-  }
-
-  @SubscribeMessage('chat:join')
-  async handleChatJoin(
-    client: Socket,
-    @MessageBody() payload: { chatId: string; userId: string },
-  ) {
-    const { chatId, userId } = payload;
-
-    // Join room chat
+ @SubscribeMessage('joinRoom')
+handleJoinRoomByChatId(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() chatId: string,
+) {
+  if (chatId) {
     client.join(chatId);
-
-    // Gửi ngay unread count cho user khi họ join chat
-    const unreadCount = await this.messageService.getUnreadCount(
-      chatId,
-      userId,
-    );
-    this.server.to(userId).emit('chat:unread', {
-      chatId,
-      unreadCount,
-    });
-
-    console.log(`User ${userId} joined chat ${chatId}`);
+    console.log(`Client ${client.id} joined chat room ${chatId}`);
   }
+}
+
+@SubscribeMessage('chat:join')
+async handleChatJoin(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() payload: { chatId: string; userId: string },
+) {
+  const { chatId, userId } = payload;
+
+  client.join(chatId);
+
+  const unreadCount = await this.messageService.getUnreadCount(chatId, userId);
+  this.server.to(userId).emit('chat:unread', {
+    chatId,
+    unreadCount,
+  });
+
+  console.log(`User ${userId} joined chat ${chatId}`);
+}
 
   @SubscribeMessage('chat:update-time')
   handleChatUpdateTime(
@@ -142,14 +141,13 @@ export class MessageGateway implements OnGatewayConnection {
     this.server.to(payload.chatId).emit('chat:update-time', payload);
   }
 
-  @SubscribeMessage('user:join')
-  handleJoinRoom(client: Socket, userId: string) {
-    if (!userId) {
-      return;
-    }
-    client.join(userId);
-  }
-
+@SubscribeMessage('user:join')
+handleJoinRoom(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() userId: string,
+) {
+  if (userId) client.join(userId);
+}
   // ✅ Method để gửi unread counts khi user vào chat
   async sendUnreadCountsToUser(userId: string) {
     const unreadCounts = await this.messageService.getUnreadCounts(userId);

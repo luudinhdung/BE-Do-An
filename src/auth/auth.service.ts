@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -102,24 +104,34 @@ async login(data: LoginDto) {
   });
 
   if (!user) {
-    throw new UnauthorizedException('Không tìm thấy người dùng');
+    console.log('User not found for identifier:', data.identifier);
+    throw new HttpException(
+      { message: 'User not found', code: 'USER_NOT_FOUND' },
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 
   const isPasswordValid = await bcrypt.compare(data.password, user.password);
   if (!isPasswordValid) {
-    throw new UnauthorizedException('Sai mật khẩu');
+    console.log('Sai mật khẩu for user:', user.id);
+    throw new HttpException(
+      { message: 'Invalid password', code: 'INVALID_PASSWORD' },
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 
   const payload = { sub: user.id, email: user.email, role: user.role };
 
   const accessToken = await this.jwtService.signAsync(payload, {
-    secret: this.configService.get<string>('ACCESS_SECRET_KEY'),
-    expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXPIRES_IN') || '7d',
+    secret: this.configService.get<string>('ACCESS_SECRET_KEY')!,
+    expiresIn:
+      this.configService.get<string>('ACCESS_TOKEN_EXPIRES_IN') || '7d',
   });
 
   const refreshToken = await this.jwtService.signAsync({ sub: user.id }, {
-    secret: this.configService.get<string>('REFRESH_SECRET_KEY'),
-    expiresIn: this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN') || '30d',
+    secret: this.configService.get<string>('REFRESH_SECRET_KEY')!,
+    expiresIn:
+      this.configService.get<string>('REFRESH_TOKEN_EXPIRES_IN') || '30d',
   });
 
   return {

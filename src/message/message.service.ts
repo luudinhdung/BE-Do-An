@@ -146,7 +146,7 @@ export class MessageService {
 
   async uploadFile(file: Express.Multer.File) {
     console.log(file, 'File uploaded successfully');
-    const filePath = `http://localhost:3002/uploads/${file.originalname}`;
+    const filePath = `https://35.188.81.254/uploads/${file.originalname}`;
     return { filePath, originalName: file.originalname };
   }
 
