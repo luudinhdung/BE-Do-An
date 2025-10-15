@@ -11,7 +11,7 @@ pipeline {
     IMAGE = "dungsave123/chat-backend"
     DOCKER_CRED = 'dockerhub-credentials'
     SSH_CRED = 'gcp-ssh-key'
-    REMOTE_USER = 'dungsave123'
+    REMOTE_USER = 'dinhtuanzzzaa'
     REMOTE_HOST = '35.188.81.254'
     REMOTE_PROJECT_DIR = '/home/dinhtuanzzzaa/chat-as'
   }
