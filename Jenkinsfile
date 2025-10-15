@@ -70,8 +70,8 @@ pipeline {
             echo "🚀 Deploying to remote server..."
             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
               cd ${REMOTE_PROJECT_DIR} &&
-              docker compose pull chat-backend || true &&
-              docker compose up -d chat-backend
+              docker compose pull backend || true &&
+              docker compose up -d backend
             '
           """
         }
