@@ -1,8 +1,9 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { MessageGateway } from './message.gateway';
+import { MessageGateway } from './message.gateway'
 
+const API_URL = process.env.APP_BASE_URL ;
 @Injectable()
 export class MessageService {
   constructor(
@@ -146,7 +147,7 @@ export class MessageService {
 
   async uploadFile(file: Express.Multer.File) {
     console.log(file, 'File uploaded successfully');
-    const filePath = `https://35.188.81.254/uploads/${file.originalname}`;
+    const filePath = `${API_URL}/uploads/${file.originalname}`;
     return { filePath, originalName: file.originalname };
   }
 

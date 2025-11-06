@@ -22,7 +22,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 import { LoginDto } from './dto/login-user.dto';
-
+const API_URL = process.env.APP_BASE_URL ;
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 UseGuards;
 
@@ -100,7 +100,7 @@ export class UsersController {
     }),
   )
   uploadAvatar(@UploadedFile() file: Express.Multer.File) {
-    const imageUrl = `https://35.188.81.254/uploads/${file.filename}`;
+    const imageUrl = `${API_URL}/uploads/${file.filename}`;
     return { url: imageUrl };
   }
 

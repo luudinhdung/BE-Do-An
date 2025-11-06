@@ -21,9 +21,11 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: 'https://35.188.81.254',
-    credentials: true,
-  });
+  origin: [
+    'https://chat-as.site',   // thêm domain chính
+  ],
+  credentials: true,
+});
 
   app.useWebSocketAdapter(new IoAdapter(app));
 
