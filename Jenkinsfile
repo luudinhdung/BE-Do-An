@@ -1,7 +1,6 @@
 pipeline {
   agent {
     docker {
-      // Image có sẵn Docker CLI, ta mount Docker socket để Jenkins dùng Docker ngoài host
       image 'docker:27.0.3-cli'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
     }
@@ -19,6 +18,9 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        // Thêm dòng config safe.directory trước khi checkout
+        sh 'git config --global --add safe.directory $WORKSPACE'
+        
         checkout scm
         script {
           GIT_SHORT = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
