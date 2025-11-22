@@ -9,7 +9,7 @@ pipeline {
 
   environment {
     IMAGE = "dungsave123/chat-backend"
-    DOCKER_CRED = 'dockerhub-credentials'
+    DOCKER_CRED = 'dockerhub-cred'
     SSH_CRED = 'gcp-ssh-key'
     REMOTE_USER = 'dinhtuanzzzaa'
     REMOTE_HOST = '35.188.81.254'
