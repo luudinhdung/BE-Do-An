@@ -46,7 +46,10 @@ export class ChatController {
       req,
     );
   }
-
+  @Get("rooms")
+  async getAllRooms() {
+    return this.chatService.getAllRooms();
+  }
   @Get('my-groups')
   getMyGroupChats(@Req() req) {
     return this.chatService.getMyGroupChats(req);

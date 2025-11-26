@@ -190,7 +190,15 @@ export class UsersService {
       accessToken,
     });
   }
-
+async getAllNonAdminUsers() {
+    return this.prisma.user.findMany({
+      where: {
+        role: {
+          not: 'ADMIN',
+        },
+      },
+    });
+  }
   async updateUser(id: string, data: UpdateUserDto) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 

@@ -22,7 +22,8 @@ async function bootstrap() {
 
   app.enableCors({
   origin: [
-    'https://chat-as.site',   // thêm domain chính
+    'https://chat-as.site',
+    'http://localhost:3000',   // thêm domain chính
   ],
   credentials: true,
 });

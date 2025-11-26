@@ -84,6 +84,10 @@ export class UsersController {
     return this.usersService.findAllUsers(req);
   }
 
+  @Get("non-admin")
+  async getNonAdminUsers() {
+    return await this.usersService.getAllNonAdminUsers();
+  }
 
   @Post('avatar')
   @UseInterceptors(

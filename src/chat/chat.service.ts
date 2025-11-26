@@ -229,6 +229,15 @@ export class ChatService {
     };
   }
 
+ async getAllRooms() {
+    return this.prisma.chat.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+
   async findOneToOneChatWithUser(req, targetUserId: string) {
     const token = req.cookies['access_token'];
     const decoded = this.jwtService.verify(token, {
