@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'docker:27.0.3-cli'
-      args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent any // node Jenkins gốc để checkout
 
   environment {
     IMAGE = "dungsave123/chat-backend"
@@ -16,15 +11,15 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
+
+    stage('Prepare & Checkout') {
       steps {
-        // Thêm dòng config safe.directory trước khi checkout
-        sh 'git config --global --add safe.directory $WORKSPACE'
-        
+        deleteDir() // làm sạch workspace cũ
+        sh 'git config --global --add safe.directory $WORKSPACE || true'
         checkout scm
         script {
-          GIT_SHORT = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
-          env.IMAGE_TAG = "${GIT_SHORT}"
+          env.IMAGE_TAG = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          echo "Using IMAGE_TAG=${env.IMAGE_TAG}"
         }
       }
     }
@@ -33,7 +28,7 @@ pipeline {
       steps {
         sh '''
           echo "📦 Installing Node.js 20 & dependencies..."
-          apk add --no-cache nodejs npm
+          apk add --no-cache nodejs npm python3 make g++ || true
           node -v
           npm -v
           npm ci
@@ -43,20 +38,34 @@ pipeline {
     }
 
     stage('Build Docker Image') {
+      agent {
+        docker {
+          image 'docker:27.0.3-cli'
+          args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:$WORKSPACE -w $WORKSPACE'
+        }
+      }
       steps {
         sh '''
           echo "🐳 Building Docker image..."
-          docker build -t ${IMAGE}:${IMAGE_TAG} .
+          docker build --no-cache -t ${IMAGE}:${IMAGE_TAG} .
         '''
       }
     }
 
     stage('Push Docker Image') {
       steps {
+        agent {
+          docker {
+            image 'docker:27.0.3-cli'
+            args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:$WORKSPACE -w $WORKSPACE'
+          }
+        }
         withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
-            echo "📤 Pushing image to Docker Hub..."
+            echo "📤 Logging in to Docker Hub..."
             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+            echo "📤 Pushing image..."
             docker push ${IMAGE}:${IMAGE_TAG}
             docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
             docker push ${IMAGE}:latest
