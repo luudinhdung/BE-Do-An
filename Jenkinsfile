@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'docker:27.0.3-cli'
-      args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent any
 
   environment {
     IMAGE = "dungsave123/chat-backend"
@@ -16,56 +11,56 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
+    stage('Checkout SCM') {
+      agent { label 'master' } // chạy trên node mặc định, không trong Docker
       steps {
-        // Thêm dòng config safe.directory trước khi checkout
-        sh 'git config --global --add safe.directory $WORKSPACE'
-        
         checkout scm
         script {
-          GIT_SHORT = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
-          env.IMAGE_TAG = "${GIT_SHORT}"
+          // thêm safe.directory để tránh warning Git
+          sh "git config --global --add safe.directory ${env.WORKSPACE}"
+          env.IMAGE_TAG = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
         }
       }
     }
 
-    stage('Install Dependencies') {
-      steps {
-        sh '''
-          echo "📦 Installing Node.js 20 & dependencies..."
-          apk add --no-cache nodejs npm
-          node -v
-          npm -v
-          npm ci
-          npx prisma generate --schema=./prisma/schema.prisma
-        '''
+    stage('Build & Push Docker') {
+      agent {
+        docker {
+          image 'docker:27.0.3-cli'
+          args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
+        }
       }
-    }
-
-    stage('Build Docker Image') {
       steps {
-        sh '''
-          echo "🐳 Building Docker image..."
-          docker build -t ${IMAGE}:${IMAGE_TAG} .
-        '''
-      }
-    }
-
-    stage('Push Docker Image') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+        stage('Install Dependencies') {
           sh '''
-            echo "📤 Pushing image to Docker Hub..."
-            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-            docker push ${IMAGE}:${IMAGE_TAG}
-            docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
-            docker push ${IMAGE}:latest
+            echo "📦 Installing Node.js 20 & dependencies..."
+            apk add --no-cache nodejs npm
+            node -v
+            npm -v
+            npm ci
+            npx prisma generate --schema=./prisma/schema.prisma
           '''
+        }
+
+        stage('Build Docker Image') {
+          sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
+        }
+
+        stage('Push Docker Image') {
+          withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            sh '''
+              echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+              docker push ${IMAGE}:${IMAGE_TAG}
+              docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
+              docker push ${IMAGE}:latest
+            '''
+          }
         }
       }
     }
 
     stage('Deploy to Remote VM') {
+      agent { label 'master' } // deploy cũng chạy trên node mặc định
       steps {
         sshagent([SSH_CRED]) {
           sh """
