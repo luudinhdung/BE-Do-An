@@ -1,7 +1,6 @@
 pipeline {
   agent {
     docker {
-      // Image có sẵn Docker CLI, ta mount Docker socket để Jenkins dùng Docker ngoài host
       image 'docker:27.0.3-cli'
       args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
     }
@@ -17,28 +16,15 @@ pipeline {
   }
 
   stages {
-
-    stage('Clean & Checkout') {
+    stage('Checkout') {
       steps {
-        // Xóa sạch workspace để tránh lỗi không có .git
-        deleteDir()
-
-        // Checkout repo
-        checkout([
-          $class: 'GitSCM',
-          branches: [[name: '*/main']],
-          userRemoteConfigs: [[
-            url: 'https://github.com/luudinhdung/BE-Do-An'
-          ]]
-        ])
-
-        // Tránh lỗi safe.directory khi Jenkins user khác
-        sh 'git config --global --add safe.directory $WORKSPACE || true'
-
-        // Lấy short commit hash làm IMAGE_TAG
+        // Thêm dòng config safe.directory trước khi checkout
+        sh 'git config --global --add safe.directory $WORKSPACE'
+        
+        checkout scm
         script {
-          env.IMAGE_TAG = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-          echo "IMAGE_TAG=${env.IMAGE_TAG}"
+          GIT_SHORT = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
+          env.IMAGE_TAG = "${GIT_SHORT}"
         }
       }
     }
@@ -69,7 +55,8 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
-            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            echo "📤 Pushing image to Docker Hub..."
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
             docker push ${IMAGE}:${IMAGE_TAG}
             docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
             docker push ${IMAGE}:latest
