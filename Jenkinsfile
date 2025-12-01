@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'docker:27.0.3-cli'
+      args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
+    }
+  }
 
   environment {
     IMAGE = "dungsave123/chat-backend"
@@ -11,23 +16,20 @@ pipeline {
   }
 
   stages {
-    stage('Checkout SCM') {
+    stage('Checkout') {
       steps {
+        // Thêm dòng config safe.directory trước khi checkout
+        sh 'git config --global --add safe.directory $WORKSPACE'
+        
         checkout scm
-        sh "git config --global --add safe.directory ${env.WORKSPACE}"
         script {
-          env.IMAGE_TAG = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
+          GIT_SHORT = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
+          env.IMAGE_TAG = "${GIT_SHORT}"
         }
       }
     }
 
     stage('Install Dependencies') {
-      agent {
-        docker {
-          image 'docker:27.0.3-cli'
-          args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
       steps {
         sh '''
           echo "📦 Installing Node.js 20 & dependencies..."
@@ -41,27 +43,19 @@ pipeline {
     }
 
     stage('Build Docker Image') {
-      agent {
-        docker {
-          image 'docker:27.0.3-cli'
-          args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
       steps {
-        sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
+        sh '''
+          echo "🐳 Building Docker image..."
+          docker build -t ${IMAGE}:${IMAGE_TAG} .
+        '''
       }
     }
 
     stage('Push Docker Image') {
-      agent {
-        docker {
-          image 'docker:27.0.3-cli'
-          args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-      }
       steps {
         withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
+            echo "📤 Pushing image to Docker Hub..."
             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
             docker push ${IMAGE}:${IMAGE_TAG}
             docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
