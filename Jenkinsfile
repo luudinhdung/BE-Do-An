@@ -18,18 +18,27 @@ pipeline {
 
   stages {
 
-    stage('Prepare') {
+    stage('Clean & Checkout') {
       steps {
-        sh 'git config --global --add safe.directory /var/jenkins_home/workspace/be-pipeline'
-      }
-    }
+        // Xóa sạch workspace để tránh lỗi không có .git
+        deleteDir()
 
-    stage('Checkout') {
-      steps {
-        checkout scm
+        // Checkout repo
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: '*/main']],
+          userRemoteConfigs: [[
+            url: 'https://github.com/luudinhdung/BE-Do-An'
+          ]]
+        ])
+
+        // Tránh lỗi safe.directory khi Jenkins user khác
+        sh 'git config --global --add safe.directory $WORKSPACE || true'
+
+        // Lấy short commit hash làm IMAGE_TAG
         script {
-          GIT_SHORT = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
-          env.IMAGE_TAG = "${GIT_SHORT}"
+          env.IMAGE_TAG = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          echo "IMAGE_TAG=${env.IMAGE_TAG}"
         }
       }
     }
@@ -60,8 +69,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
-            echo "📤 Pushing image to Docker Hub..."
-            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
             docker push ${IMAGE}:${IMAGE_TAG}
             docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
             docker push ${IMAGE}:latest
