@@ -17,6 +17,13 @@ pipeline {
   }
 
   stages {
+
+    stage('Prepare') {
+      steps {
+        sh 'git config --global --add safe.directory /var/jenkins_home/workspace/be-pipeline'
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout scm
