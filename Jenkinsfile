@@ -12,18 +12,16 @@ pipeline {
 
   stages {
     stage('Checkout SCM') {
-      agent { label 'master' } // chạy trên node mặc định, không trong Docker
       steps {
         checkout scm
+        sh "git config --global --add safe.directory ${env.WORKSPACE}"
         script {
-          // thêm safe.directory để tránh warning Git
-          sh "git config --global --add safe.directory ${env.WORKSPACE}"
           env.IMAGE_TAG = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
         }
       }
     }
 
-    stage('Build & Push Docker') {
+    stage('Install Dependencies') {
       agent {
         docker {
           image 'docker:27.0.3-cli'
@@ -31,36 +29,49 @@ pipeline {
         }
       }
       steps {
-        stage('Install Dependencies') {
+        sh '''
+          echo "📦 Installing Node.js 20 & dependencies..."
+          apk add --no-cache nodejs npm
+          node -v
+          npm -v
+          npm ci
+          npx prisma generate --schema=./prisma/schema.prisma
+        '''
+      }
+    }
+
+    stage('Build Docker Image') {
+      agent {
+        docker {
+          image 'docker:27.0.3-cli'
+          args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
+      steps {
+        sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
+      }
+    }
+
+    stage('Push Docker Image') {
+      agent {
+        docker {
+          image 'docker:27.0.3-cli'
+          args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
+      steps {
+        withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
-            echo "📦 Installing Node.js 20 & dependencies..."
-            apk add --no-cache nodejs npm
-            node -v
-            npm -v
-            npm ci
-            npx prisma generate --schema=./prisma/schema.prisma
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+            docker push ${IMAGE}:${IMAGE_TAG}
+            docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
+            docker push ${IMAGE}:latest
           '''
-        }
-
-        stage('Build Docker Image') {
-          sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
-        }
-
-        stage('Push Docker Image') {
-          withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            sh '''
-              echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-              docker push ${IMAGE}:${IMAGE_TAG}
-              docker tag ${IMAGE}:${IMAGE_TAG} ${IMAGE}:latest
-              docker push ${IMAGE}:latest
-            '''
-          }
         }
       }
     }
 
     stage('Deploy to Remote VM') {
-      agent { label 'master' } // deploy cũng chạy trên node mặc định
       steps {
         sshagent([SSH_CRED]) {
           sh """
